@@ -1,4 +1,0 @@
-requests
-minio
-python-dotenv
-pandas

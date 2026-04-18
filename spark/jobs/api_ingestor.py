@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 import pandas as pd
 from datetime import datetime
 from minio import Minio
-
+import time
 
 
 # Load .env file
@@ -74,7 +74,7 @@ def ingest_data(df, bucket_name="stock-data"):
     """Save DataFrame to CSV and upload to MinIO"""
     # Create MinIO client
     client = Minio(
-        "localhost:9000",
+        "minio:9000",
         access_key="admin",
         secret_key="password123",
         secure=False
@@ -104,13 +104,15 @@ def ingest_data(df, bucket_name="stock-data"):
 
 if __name__ == "__main__":
 
-	for symbol in main_companies:
-		try:
-			df = load_data(symbol)
-			ingest_data(df)
-			print("Ingestion finished successfully ✅")
-		except Exception as e:
-			print("Error: ", e)
+	while True:
+		for symbol in main_companies:
+			try:
+				df = load_data(symbol)
+				ingest_data(df)
+				print("Ingestion finished successfully ✅")
+			except Exception as e:
+				print("Error: ", e)
+
 
 
 

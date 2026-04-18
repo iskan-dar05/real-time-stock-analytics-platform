@@ -1,120 +1,27 @@
-data-platform/
-
-docker-compose.yml
-
-spark/
-  jobs/
-    clean_data.py
-
-pipeline/
-  api_ingestor.py
-
-warehouse/
-  load_to_postgres.py
-
-
-
-
-
-API
- ↓
-raw JSON
- ↓
-MinIO (data lake)
- ↓
-ETL pipeline
- ↓
-PostgreSQL (clean tables)
- ↓
-ML training
- ↓
-trained model
- ↓
-MinIO
-
-
-
-
-
-import os
-import requests
-import pandas as pd
-from datetime import datetime
-from minio import Minio
-
-API_KEY = os.getenv("FINNHUB_KEY")
-
-def fetch_stock_candles(symbol, resolution='D', _from=None, to=None):
-    url = "https://finnhub.io/api/v1/stock/candle"
-    params = {
-        "symbol": symbol,
-        "resolution": resolution,
-        "from": _from,
-        "to": to,
-        "token": API_KEY
-    }
-    resp = requests.get(url, params=params)
-    resp.raise_for_status()
-    data = resp.json()
-    
-    if data.get("s") != "ok":
-        raise ValueError(f"No data returned for symbol {symbol}")
-    
-    df = pd.DataFrame({
-        "date": pd.to_datetime(data["t"], unit='s'),
-        "open": data["o"],
-        "high": data["h"],
-        "low": data["l"],
-        "close": data["c"],
-        "volume": data["v"]
-    })
-    df["symbol"] = symbol
-    return df
-
-def fetch_company_news(symbol, _from, to):
-    url = "https://finnhub.io/api/v1/company-news"
-    params = {
-        "symbol": symbol,
-        "from": _from,
-        "to": to,
-        "token": API_KEY
-    }
-    resp = requests.get(url, params=params)
-    resp.raise_for_status()
-    data = resp.json()
-    df = pd.DataFrame(data)
-    df["symbol"] = symbol
-    return df
-
-def upload_to_minio(df, bucket="stock-data", filename=None):
-    client = Minio(
-        "localhost:9000",
-        access_key="admin",
-        secret_key="password123",
-        secure=False
-    )
-    if not client.bucket_exists(bucket):
-        client.make_bucket(bucket)
-    
-    if filename is None:
-        now = datetime.now()
-        filename = now.strftime("%Y-%m-%d_%H-%M") + ".csv"
-    
-    df.to_csv(filename, index=False)
-    client.fput_object(bucket, f"raw/{filename}", filename)
-    print(f"✅ Uploaded {filename} to bucket '{bucket}'")
-
-# Example usage
-if __name__ == "__main__":
-    df_prices = fetch_stock_candles("AAPL", "D", 1678924800, 1679011200)
-    upload_to_minio(df_prices)
-    
-    df_news = fetch_company_news("AAPL", "2026-03-01", "2026-03-15")
-    upload_to_minio(df_news, filename="AAPL_news.csv")
-
-
-
-
-
-
-
+project_folder/
+│
+├── data/                  # Local storage for raw & processed files
+│   ├── raw/
+│   └── processed/
+│
+├── spark/                 # All Spark jobs
+│   ├── jobs/              # Individual Spark jobs
+│   │   ├── ingest.py
+│   │   ├── feature_engineering.py
+│   │   └── train_model.py
+│   └── utils/             # Spark helper functions
+│       ├── spark_session.py
+│       └── spark_helpers.py
+│
+├── pipeline/              # High-level orchestrator / ETL pipeline
+│   ├── run_pipeline.py    # Main script to run everything
+│   └── pipeline_utils.py  # Helpers for pipeline orchestration
+│
+├── models/                # Saved ML models
+│
+├── notebooks/             # Jupyter / exploration
+│
+├── config/                # Config files (e.g., MinIO credentials)
+│   └── config.yaml
+│
+└── requirements.txt
