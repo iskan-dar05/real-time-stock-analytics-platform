@@ -40,7 +40,35 @@ services:
       test: ["CMD-SHELL", "pg_isready -U admin -d warehouse"]
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 60
+
+  mlflow:
+    image: python:3.11-slim
+    container_name: mlflow-server
+    ports:
+      - "5000:5000"
+
+    command:
+      - sh
+      - -c
+      - |
+        pip install mlflow &&
+        mlflow server \
+        --host 0.0.0.0 \
+        --port 5000 \
+        --workers 1 \
+        --backend-store-uri sqlite:///mlflow.db \
+        --default-artifact-root /mlruns
+
+    volumes:
+      - ./mlruns:/mlruns
+
+    # healthcheck:
+    #   test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000')"]
+    #   interval: 60s
+    #   timeout: 5s
+    #   retries: 5
+
 
   pipeline:
     build: .
@@ -49,6 +77,8 @@ services:
       minio:
         condition: service_healthy
       postgres:
+        condition: service_healthy
+      mlflow:
         condition: service_healthy
 
 
