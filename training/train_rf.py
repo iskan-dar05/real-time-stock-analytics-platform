@@ -117,9 +117,37 @@ def train_and_log_model(
             input_example=X_train.iloc[:5]
         )
 
-        
+        run_id = mlflow.active_run().info.run_id
+        print(f"\nMLflow Run ID: {run_id}")
+        print(f"View this run: http://localhost:5000/#/experiments/1/runs/{run_id}")
+
+        return model
+
+
+
+
+
+def run_experiments_sweep():
+	print("="*60)
+	print("training model on different hyperparameters")
+	print("="*60)
+
+	experiments = [
+        	{"n_estimators": 50, "max_depth": 5},
+        	{"n_estimators": 100, "max_depth": 10},
+        	{"n_estimators": 100, "max_depth": 15},
+        	{"n_estimators": 200, "max_depth": 10},
+        	{"n_estimators": 200, "max_depth": 20},
+    	]
+
+	for i, params in enumerate(experiments, 1):
+		print(f"Experiment {i}/{len(experiments)}")
+		train_and_log_model(**params)
+	print("\n" + "="*60)
+    	print("EXPERIMENT SWEEP COMPLETE!")
+    	print("="*60)
 
 
 
 if __name__ == "__main__":
-    train_and_log_model()
+    run_experiments_sweep()
