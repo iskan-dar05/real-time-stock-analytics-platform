@@ -14,6 +14,7 @@ load_dotenv()
 # get api key
 
 API_KEY = os.getenv("API_KEY")
+print("API_KEY: ", API_KEY)
 
 
 main_companies = [
@@ -44,6 +45,7 @@ def load_data(symbol: str):
 
 	# Get time_series
 	time_series = data.get("Time Series (Daily)")
+	print(data)
 	if not time_series:
 		raise ValueError(f"No data returned for symbol {symbol}")
 

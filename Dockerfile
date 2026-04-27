@@ -22,4 +22,4 @@ COPY . .
 
 ENV PYTHONPATH=/app
 
-CMD ["python", "training/train_model.py"]
+CMD ["python", "training/train_rf.py"]
